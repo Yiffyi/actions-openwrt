@@ -16,19 +16,19 @@ on:
       branch:
         description: 'REPO_BRANCH'
         required: false
-        default: 'v23.05.3'
+        default: 'main'
       repo:
         description: 'REPO_URL'
         required: false
-        default: 'https://github.com/openwrt/openwrt'
+        default: 'https://github.com/Yiffyi/openwrt'
       config:
         description: 'CONFIG_FILE'
         required: false
-        default: 'ax6s.config'
+        default: 'filogic.config'
       device:
         description: 'DEVICE_NAME'
         required: false
-        default: 'xiaomi_redmi-router-ax6s'
+        default: 'filogic_combo'
 
 env:
   REPO_URL: ${{ inputs.repo }}
@@ -67,23 +67,6 @@ jobs:
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
-    - name: Cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          /workdir/openwrt/.ccache
-          /workdir/openwrt/staging_dir
-          /workdir/openwrt/build_dir
-          /workdir/openwrt/dl
-          /workdir/openwrt/feeds
-          /workdir/openwrt/tmp
-        key: openwrt-build-${{ inputs.branch }}-${{ inputs.device }}-${{ hashFiles(inputs.config) }}
-        restore-keys: |
-          openwrt-build-${{ inputs.branch }}-${{ inputs.device }}-${{ hashFiles(inputs.config) }}
-          openwrt-build-${{ inputs.branch }}-${{ inputs.device }}-
-          openwrt-build-${{ inputs.branch }}-
-          openwrt-build-
-
     - name: Load custom feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
@@ -106,11 +89,11 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
         make defconfig
 
-    # - name: Download package
-    #   id: package
-    #   run: |
-    #     cd openwrt
-    #     make download -j8
+    - name: Download package
+      id: package
+      run: |
+        cd openwrt
+        make download -j8
 
     - name: Compile the firmware
       id: compile
@@ -149,9 +132,3 @@ jobs:
       with:
         name: OpenWrt_firmware_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
-
-    - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
-      with:
-        retain_days: 1
-        keep_minimum_runs: 3
