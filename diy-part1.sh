@@ -18,7 +18,7 @@
 #echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
 #echo 'src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall;packages' >>feeds.conf.default
 #echo 'src-git passwall_luci https://github.com/xiaorouji/openwrt-passwall;luci' >>feeds.conf.default
-#echo 'src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages' >>feeds.conf
-echo 'src-git passwall_packages https://github.com/Yiffyi/openwrt-passwall-packages;low-memory' >>feeds.conf
+echo 'src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages' >>feeds.conf
+# echo 'src-git passwall_packages https://github.com/Yiffyi/openwrt-passwall-packages;low-memory' >>feeds.conf
 # echo 'src-git passwall_luci https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf
 cat feeds.conf.default >> feeds.conf
