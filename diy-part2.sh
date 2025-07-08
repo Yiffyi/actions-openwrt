@@ -21,7 +21,7 @@ cat <<EOF > package/base-files/files/etc/board.d/99-yiffyi
 board_config_update
 
 #ucidef_set_timezone 'CST-8'
-ucidef_set_ntpserver 'ntp.sjtu.edu.cn' 'pool.ntp.org' 'time.apple.com' 'time.cloudflare.com'
+ucidef_set_ntpserver 'ntp1.aliyun.com' 'time.windows.com' 'time.apple.com'
 ucidef_set_ssh_authorized_key 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTLjpK+Muyugr2FJgl8GfXfbKBSKWSY1WLozAcJFYIG eddsa-key-20240129'
 
 board_config_flush
