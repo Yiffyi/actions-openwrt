@@ -49,7 +49,7 @@ jobs:
       image: openwrt/sdk:latest
       volumes:
         - /mnt/workdir:/workdir
-      options: --user root:root --workdir /workdir
+      options: --user root:root
 
     steps:
     - name: Checkout
@@ -57,41 +57,44 @@ jobs:
 
     - name: Clone source code
       run: |
-        df -hT $PWD
-        git clone $REPO_URL -b $REPO_BRANCH --depth=1 openwrt
+        df -hT
+        git clone $REPO_URL -b $REPO_BRANCH --depth=1 /workdir/openwrt
+        ln -s /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Load custom feeds
       run: |
+        cd $GITHUB_WORKSPACE
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
         cd openwrt
-        ./$DIY_P1_SH
+        $GITHUB_WORKSPACE/$DIY_P1_SH
 
     - name: Update feeds
-      run: cd openwrt && ./scripts/feeds update -a
+      run: cd $GITHUB_WORKSPACE/openwrt && ./scripts/feeds update -a
 
     - name: Install feeds
-      run: cd openwrt && ./scripts/feeds install -a
+      run: cd $GITHUB_WORKSPACE/openwrt && ./scripts/feeds install -a
 
     - name: Load custom configuration
       run: |
+        cd $GITHUB_WORKSPACE
         [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P2_SH
         cd openwrt
-        ./$DIY_P2_SH
+        $GITHUB_WORKSPACE/$DIY_P2_SH
         make defconfig
 
     - name: Download package
       id: package
       run: |
-        cd openwrt
+        cd $GITHUB_WORKSPACE/openwrt
         make download -j8
 
     - name: Compile the firmware
       id: compile
       run: |
-        cd openwrt
+        cd $GITHUB_WORKSPACE/openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
@@ -101,20 +104,20 @@ jobs:
       if: (!cancelled())
       run: |
         df -hT
-        du --human-readable --max-depth=1 /workdir/openwrt
+        du --human-readable --max-depth=1 $GITHUB_WORKSPACE/openwrt
 
     - name: Upload bin directory
       uses: actions/upload-artifact@main
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: OpenWrt_bin_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
-        path: openwrt/bin
+        path: /workdir/openwrt/bin
 
     - name: Organize files
       id: organize
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
-        cd openwrt/bin/targets/*/*
+        cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
         rm -rf packages
         du --human-readable .
         ls -lah
