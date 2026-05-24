@@ -15,7 +15,7 @@
 
 # cp $GITHUB_WORKSPACE/600-custom-change-txpower-and-dfs.patch package/firmware/wireless-regdb/patches/
 
-cat <<EOF > package/base-files/files/etc/board.d/99-yiffyi-defaults
+cat <<'EOF' > package/base-files/files/etc/board.d/99-yiffyi-defaults
 #!/bin/sh
 
 . /lib/functions/uci-defaults.sh
