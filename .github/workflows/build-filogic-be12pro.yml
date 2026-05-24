@@ -1,0 +1,134 @@
+#
+# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+# https://github.com/P3TERX/Actions-OpenWrt
+# Description: Build OpenWrt using GitHub Actions
+#
+
+name: Build ImmortalWrt (filogic_tenda_be12-pro)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'REPO_BRANCH'
+        required: false
+        default: 'master'
+      repo:
+        description: 'REPO_URL'
+        required: false
+        default: 'https://github.com/immortalwrt/immortalwrt'
+      config:
+        description: 'CONFIG_FILE'
+        required: false
+        default: 'filogic_be12pro.config'
+      device:
+        description: 'DEVICE_NAME'
+        required: false
+        default: 'filogic_tenda_be12-pro'
+
+env:
+  REPO_URL: ${{ inputs.repo }}
+  REPO_BRANCH: ${{ inputs.branch }}
+  FEEDS_CONF: feeds.conf.default
+  CONFIG_FILE: ${{ inputs.config }}
+  DEVICE_NAME: ${{ inputs.device }}
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
+  UPLOAD_BIN_DIR: true
+  UPLOAD_FIRMWARE: true
+  TZ: Asia/Shanghai
+  FORCE_UNSAFE_CONFIGURE: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: openwrt/sdk:latest
+      volumes:
+        - /mnt/workdir:/workdir
+      options: --user root:root
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Clone source code
+      run: |
+        df -hT
+        ls -lah
+        git clone $REPO_URL -b $REPO_BRANCH --depth=1 /workdir/openwrt
+        ln -s /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+    - name: Load custom feeds
+      run: |
+        cd $GITHUB_WORKSPACE
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        chmod +x $DIY_P1_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+
+    - name: Update feeds
+      run: cd $GITHUB_WORKSPACE/openwrt && ./scripts/feeds update -a
+
+    - name: Install feeds
+      run: cd $GITHUB_WORKSPACE/openwrt && ./scripts/feeds install -a
+
+    - name: Load custom configuration
+      run: |
+        cd $GITHUB_WORKSPACE
+        [ -e files ] && mv files openwrt/files
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $DIY_P2_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P2_SH
+        make defconfig
+
+    - name: Download package
+      id: package
+      run: |
+        cd $GITHUB_WORKSPACE/openwrt
+        make download -j8
+
+    - name: Compile the firmware
+      id: compile
+      run: |
+        cd /workdir/openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
+    - name: Check space usage
+      if: (!cancelled())
+      run: |
+        df -hT
+        du --human-readable --max-depth=1 $GITHUB_WORKSPACE/openwrt
+
+    - name: Upload bin directory
+      uses: actions/upload-artifact@main
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: OpenWrt_bin_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        path: /workdir/openwrt/bin
+
+    - name: Organize files
+      id: organize
+      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      run: |
+        cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
+        rm -rf packages
+        du --human-readable .
+        ls -lah
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: OpenWrt_firmware_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE }}
