@@ -13,7 +13,7 @@
 # Modify default IP
 #sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate
 
-cp $GITHUB_WORKSPACE/600-custom-change-txpower-and-dfs.patch package/firmware/wireless-regdb/patches/
+# cp $GITHUB_WORKSPACE/600-custom-change-txpower-and-dfs.patch package/firmware/wireless-regdb/patches/
 
 cat <<EOF > package/base-files/files/etc/board.d/99-yiffyi-defaults
 #!/bin/sh
