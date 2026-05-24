@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build OpenWrt
+name: Build ImmortalWrt Filogic
 
 on:
   workflow_dispatch:
@@ -16,11 +16,11 @@ on:
       branch:
         description: 'REPO_BRANCH'
         required: false
-        default: 'main'
+        default: 'openwrt-24.10'
       repo:
         description: 'REPO_URL'
         required: false
-        default: 'https://github.com/Yiffyi/openwrt'
+        default: 'https://github.com/immortalwrt/immortalwrt'
       config:
         description: 'CONFIG_FILE'
         required: false
@@ -59,6 +59,7 @@ jobs:
     - name: Clone source code
       run: |
         df -hT
+        ls -lah
         git clone $REPO_URL -b $REPO_BRANCH --depth=1 /workdir/openwrt
         ln -s /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 

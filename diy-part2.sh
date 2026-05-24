@@ -15,8 +15,21 @@
 
 cp $GITHUB_WORKSPACE/600-custom-change-txpower-and-dfs.patch package/firmware/wireless-regdb/patches/
 
-cat <<EOF > package/base-files/files/etc/board.d/99-yiffyi
+cat <<EOF > package/base-files/files/etc/board.d/99-yiffyi-defaults
+#!/bin/sh
+
 . /lib/functions/uci-defaults.sh
+
+SERVICES="ocserv monit xl2tpd tailscale frpc frps netdata sing-box"
+for x in $SERVICES
+do
+  echo "yiffyi-defaults: disable optional service $x" > /dev/kmsg
+  /etc/init.d/$x disable
+done
+
+echo "yiffyi-defaults: skip openvpn cert generation" > /dev/kmsg
+echo "yiffyi-defaults: Run 'sh /etc/openvpn/renewcert.sh' to generate /etc/openvpn/pki/ca.crt" > /dev/kmsg
+mv /etc/uci-defaults/openvpn /etc/openvpn/openvpn-init.sh
 
 board_config_update
 
