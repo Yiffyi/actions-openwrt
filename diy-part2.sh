@@ -20,7 +20,7 @@ cat <<'EOF' > package/base-files/files/etc/board.d/99-yiffyi-defaults
 
 . /lib/functions/uci-defaults.sh
 
-SERVICES="ocserv monit xl2tpd tailscale frpc frps netdata sing-box"
+SERVICES="ocserv monit xl2tpd tailscale netbird frpc frps netdata sing-box"
 for x in $SERVICES
 do
   echo "yiffyi-defaults: disable optional service $x" > /dev/kmsg
